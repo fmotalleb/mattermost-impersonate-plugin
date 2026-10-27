@@ -283,7 +283,7 @@ func (p *Plugin) requireAdmin(w http.ResponseWriter, r *http.Request) *model.Use
 
 var adminTmpl = template.Must(template.New("admin").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Impersonation</title><style>
 body{font-family:system-ui,sans-serif;max-width:650px;margin:4rem auto;padding:0 1.2rem;line-height:1.5}input,textarea,select,button{font:inherit;padding:.7rem;width:100%;box-sizing:border-box;margin:.35rem 0 1.1rem}button{background:#155fc1;color:white;border:0;border-radius:5px;cursor:pointer}aside{background:#fff4de;padding:1rem;border-left:4px solid #b97110}small{color:#555}
-</style></head><body><h1>Impersonate a user</h1><p>Signed in as <b>{{.Admin}}</b> (system admin).</p><aside><b>Privileged action:</b> all activity will run with the target user's permissions, be identified as their activity inside Mattermost, and be logged with your admin account in server logs. This is not a read-only preview. The temporary session lasts 15 minutes. On exit you must log in again as admin. Other tabs in this browser will also switch accounts.</aside><form method="POST" action="{{.Base}}/start"><input type="hidden" name="csrf" value="{{.CSRF}}"><label for="username">Target user</label><select id="username" name="username" required><option value="" selected disabled>Select a user</option>{{range .Targets}}<option value="{{.Username}}">@{{.Username}}{{if .FullName}} — {{.FullName}}{{end}}</option>{{end}}</select><label for="reason">Audit reason (8 to 240 characters)</label><textarea id="reason" name="reason" required minlength="8" maxlength="240" rows="3"></textarea><button type="submit">Start impersonation</button></form><small>System admins, bot users, disabled users, remote users, and your own account are excluded. Use a private browser window if you need your normal admin session open elsewhere.</small></body></html>`))
+</style></head><body><h1>Impersonate a user</h1><p>Signed in as <b>{{.Admin}}</b> (system admin).</p><aside><b>Privileged action:</b> all activity will run with the target user's permissions, be identified as their activity inside Mattermost, and be logged with your admin account in server logs. This is not a read-only preview. The temporary session lasts 15 minutes. On exit you must log in again as admin. Other tabs in this browser will also switch accounts.</aside><form method="POST" action="{{.Base}}/start"><input type="hidden" name="csrf" value="{{.SessionCSRF}}"><input type="hidden" name="plugin_csrf" value="{{.CSRF}}"><label for="username">Target user</label><select id="username" name="username" required><option value="" selected disabled>Select a user</option>{{range .Targets}}<option value="{{.Username}}">@{{.Username}}{{if .FullName}} — {{.FullName}}{{end}}</option>{{end}}</select><label for="reason">Audit reason (8 to 240 characters)</label><textarea id="reason" name="reason" required minlength="8" maxlength="240" rows="3"></textarea><button type="submit">Start impersonation</button></form><small>System admins, bot users, disabled users, remote users, and your own account are excluded. Use a private browser window if you need your normal admin session open elsewhere.</small></body></html>`))
 
 type userOption struct {
 	Username string
@@ -316,6 +316,10 @@ func (p *Plugin) adminPage(w http.ResponseWriter, r *http.Request, site *url.URL
 		http.Error(w, "Unable to load users", http.StatusInternalServerError)
 		return
 	}
+	var sessionCSRF string
+	if cookie, err := r.Cookie(model.SessionCookieCsrf); err == nil {
+		sessionCSRF = cookie.Value
+	}
 	token, err := newCSRF()
 	if err != nil {
 		http.Error(w, "Unable to prepare form", http.StatusInternalServerError)
@@ -325,9 +329,9 @@ func (p *Plugin) adminPage(w http.ResponseWriter, r *http.Request, site *url.URL
 		MaxAge: int(formLifetime.Seconds()), Expires: time.Now().Add(formLifetime),
 		HttpOnly: true, Secure: site.Scheme == "https", SameSite: http.SameSiteStrictMode})
 	htmlPage(w, adminTmpl, struct {
-		Admin, Base, CSRF string
-		Targets           []userOption
-	}{admin.Username, pluginPath(site), token, targets}, "")
+		Admin, Base, CSRF, SessionCSRF string
+		Targets                        []userOption
+	}{admin.Username, pluginPath(site), token, sessionCSRF, targets}, "")
 }
 
 func (p *Plugin) eligibleUsers(admin *model.User) ([]userOption, error) {
@@ -368,7 +372,7 @@ func (p *Plugin) start(w http.ResponseWriter, r *http.Request, site *url.URL) {
 		http.Error(w, "Invalid form", http.StatusBadRequest)
 		return
 	}
-	if !verifyFormCSRF(r, formCSRFCookie, r.PostForm.Get("csrf")) {
+	if !verifyFormCSRF(r, formCSRFCookie, r.PostForm.Get("plugin_csrf")) {
 		http.Error(w, "Invalid or expired CSRF token", http.StatusForbidden)
 		return
 	}

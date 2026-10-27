@@ -128,7 +128,7 @@ func TestCompleteSessionLifecycle(t *testing.T) {
 	p, api := newTestPlugin()
 	form := call(p, "GET", "/", "admin", "", "")
 	csrf := form.Result().Cookies()[0]
-	values := url.Values{"username": {"bob"}, "reason": {"Investigating channel memberships"}, "csrf": {csrf.Value}}
+	values := url.Values{"username": {"bob"}, "reason": {"Investigating channel memberships"}, "csrf": {"session-csrf"}, "plugin_csrf": {csrf.Value}}
 	start := call(p, "POST", "/start", "admin", "application/x-www-form-urlencoded", values.Encode(), csrf)
 	if start.Code != http.StatusSeeOther {
 		t.Fatalf("start returned %d: %s", start.Code, start.Body.String())
@@ -190,13 +190,13 @@ func TestRejectAdminTargetAndCSRF(t *testing.T) {
 	p, api := newTestPlugin()
 	form := call(p, "GET", "/", "admin", "", "")
 	cookie := form.Result().Cookies()[0]
-	values := url.Values{"username": {"root"}, "reason": {"Investigating an administrator"}, "csrf": {cookie.Value}}
+	values := url.Values{"username": {"root"}, "reason": {"Investigating an administrator"}, "csrf": {"session-csrf"}, "plugin_csrf": {cookie.Value}}
 	result := call(p, "POST", "/start", "admin", "application/x-www-form-urlencoded", values.Encode(), cookie)
 	if result.Code != http.StatusForbidden || len(api.created) != 0 {
 		t.Fatalf("admin-to-admin impersonation should be rejected (%d)", result.Code)
 	}
 	values.Set("username", "bob")
-	values.Set("csrf", "invalid")
+	values.Set("plugin_csrf", "invalid")
 	result = call(p, "POST", "/start", "admin", "application/x-www-form-urlencoded", values.Encode(), cookie)
 	if result.Code != http.StatusForbidden || len(api.created) != 0 {
 		t.Fatal("CSRF bypass")
