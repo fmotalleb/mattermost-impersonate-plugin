@@ -35,17 +35,15 @@ cd mattermost-impersonate-plugin
 ./scripts/build.sh
 ```
 
-This generates a Linux x86-64 + ARM64 Mattermost plugin install bundle at:
+This generates a Linux x86-64 + ARM64 Mattermost plugin install bundle at `dist/com.fmotalleb.impersonate-VERSION.tar.gz`. By default, `VERSION` comes from `plugin.json`; set `PLUGIN_VERSION=1.2.3` to override it. The manifest version inside the bundle uses the same value.
 
-`dist/com.fmotalleb.impersonate-0.1.0.tar.gz`
-
-The script runs `go mod tidy` and `go mod download`, builds the Go server executables and creates the Mattermost upload archive. The bundled `webapp/dist/main.js` is plain JavaScript and does not need an npm step.
+The script runs `go mod tidy` and `go mod download`, builds the Go server executables and creates the Mattermost upload archive. The bundled `webapp/dist/main.js` is plain JavaScript and does not need an npm step. Pushing a `vX.Y.Z` Git tag runs the GitHub Actions build and uploads the matching bundle as a workflow artifact.
 
 ## Installation
 
 1. Back up your Mattermost configuration and test first on staging.
 2. In Mattermost System Console, enable plugins and plugin uploads (or configure `PluginSettings.Enable` and `PluginSettings.EnableUploads` appropriately).
-3. Upload `dist/com.fmotalleb.impersonate-0.1.0.tar.gz` under **System Console → Plugins → Plugin Management** and enable the plugin.
+3. Upload `dist/com.fmotalleb.impersonate-VERSION.tar.gz` under **System Console → Plugins → Plugin Management** and enable the plugin.
 4. Sign in with a system admin account using the web browser.
 5. Choose **Impersonate user** from the main menu, or open:
 

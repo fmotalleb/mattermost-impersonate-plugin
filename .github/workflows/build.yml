@@ -1,0 +1,33 @@
+name: Build plugin
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build Mattermost plugin bundle
+        run: PLUGIN_VERSION="${GITHUB_REF_NAME#v}" ./scripts/build.sh
+
+      - name: Upload plugin bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: com.fmotalleb.impersonate-${{ github.ref_name }}
+          path: dist/com.fmotalleb.impersonate-*.tar.gz
+          if-no-files-found: error
+          retention-days: 30
