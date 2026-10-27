@@ -1,0 +1,16 @@
+{
+  "id": "com.example.impersonate",
+  "name": "Admin Impersonation",
+  "description": "Audited, temporary user impersonation for Mattermost system administrators.",
+  "version": "0.1.0",
+  "min_server_version": "11.0.0",
+  "server": {
+    "executables": {
+      "linux-amd64": "server/dist/plugin-linux-amd64",
+      "linux-arm64": "server/dist/plugin-linux-arm64"
+    }
+  },
+  "webapp": {
+    "bundle_path": "webapp/dist/main.js"
+  }
+}
