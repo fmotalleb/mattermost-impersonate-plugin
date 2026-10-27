@@ -44,6 +44,21 @@ func newTestPlugin() (*Plugin, *testAPI) {
 func (a *testAPI) GetConfig() *model.Config                                  { return a.config }
 func (a *testAPI) GetUser(id string) (*model.User, *model.AppError)          { return a.users[id], nil }
 func (a *testAPI) GetUserByUsername(s string) (*model.User, *model.AppError) { return a.byName[s], nil }
+func (a *testAPI) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
+	users := make([]*model.User, 0, len(a.users))
+	for _, user := range a.users {
+		users = append(users, user)
+	}
+	start := options.Page * options.PerPage
+	if start >= len(users) {
+		return nil, nil
+	}
+	end := start + options.PerPage
+	if end > len(users) {
+		end = len(users)
+	}
+	return users[start:end], nil
+}
 func (a *testAPI) CreateSession(s *model.Session) (*model.Session, *model.AppError) {
 	s.Id = "created-session"
 	s.Token = "created-secret-token"

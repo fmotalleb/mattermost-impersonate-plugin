@@ -11,6 +11,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -119,12 +120,6 @@ func (p *Plugin) ServeHTTP(_ *plugin.Context, w http.ResponseWriter, r *http.Req
 			return
 		}
 		p.start(w, r, siteURL)
-	case "/users":
-		if r.Method != http.MethodGet {
-			methodNotAllowed(w)
-			return
-		}
-		p.searchUsers(w, r)
 	case "/session":
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w)
@@ -287,10 +282,13 @@ func (p *Plugin) requireAdmin(w http.ResponseWriter, r *http.Request) *model.Use
 }
 
 var adminTmpl = template.Must(template.New("admin").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Impersonation</title><style>
-body{font-family:system-ui,sans-serif;max-width:650px;margin:4rem auto;padding:0 1.2rem;line-height:1.5}input,textarea,button{font:inherit;padding:.7rem;width:100%;box-sizing:border-box;margin:.35rem 0 1.1rem}button{background:#155fc1;color:white;border:0;border-radius:5px;cursor:pointer}aside{background:#fff4de;padding:1rem;border-left:4px solid #b97110}small{color:#555}.user-picker{position:relative}.user-options{position:absolute;z-index:1;top:100%;left:0;right:0;max-height:16rem;overflow:auto;background:white;border:1px solid #aaa;border-radius:4px}.user-options[hidden]{display:none}.user-options button{display:block;text-align:left;background:white;color:#222;margin:0;border-radius:0}.user-options button:hover,.user-options button:focus{background:#eef4fc}.user-options span{display:block;color:#555;font-size:.9em}
-</style></head><body><h1>Impersonate a user</h1><p>Signed in as <b>{{.Admin}}</b> (system admin).</p><aside><b>Privileged action:</b> all activity will run with the target user's permissions, be identified as their activity inside Mattermost, and be logged with your admin account in server logs. This is not a read-only preview. The temporary session lasts 15 minutes. On exit you must log in again as admin. Other tabs in this browser will also switch accounts.</aside><form method="POST" action="{{.Base}}/start"><input type="hidden" name="csrf" value="{{.CSRF}}"><label for="user-search">Target user</label><div class="user-picker" data-search-url="{{.Base}}/users"><input id="user-search" type="search" autocomplete="off" placeholder="Search by username or name" aria-autocomplete="list" aria-controls="user-options" aria-expanded="false" required><input id="target-username" type="hidden" name="username"><div id="user-options" class="user-options" role="listbox" hidden></div><small id="user-search-status" aria-live="polite">Type at least 2 characters to search.</small></div><label for="reason">Audit reason (8 to 240 characters)</label><textarea id="reason" name="reason" required minlength="8" maxlength="240" rows="3"></textarea><button type="submit">Start impersonation</button></form><small>System admins, bot users, disabled users, remote users, and your own account are excluded. Use a private browser window if you need your normal admin session open elsewhere.</small><script nonce="{{.Nonce}}">
-(()=>{const picker=document.querySelector('.user-picker'),input=document.querySelector('#user-search'),selected=document.querySelector('#target-username'),options=document.querySelector('#user-options'),status=document.querySelector('#user-search-status');let timer,request=0;const close=()=>{options.hidden=true;input.setAttribute('aria-expanded','false')};input.addEventListener('input',()=>{selected.value='';clearTimeout(timer);const current=++request;const term=input.value.trim();if(term.length<2){options.replaceChildren();status.textContent='Type at least 2 characters to search.';close();return}status.textContent='Searching…';timer=setTimeout(async()=>{try{const response=await fetch(picker.dataset.searchUrl+'?q='+encodeURIComponent(term),{credentials:'same-origin',headers:{Accept:'application/json'}});if(!response.ok)throw new Error();const users=await response.json();if(current!==request)return;options.replaceChildren();for(const user of users){const button=document.createElement('button');button.type='button';button.setAttribute('role','option');button.textContent='@'+user.username;if(user.full_name){const name=document.createElement('span');name.textContent=user.full_name;button.append(name)}button.addEventListener('click',()=>{input.value='@'+user.username;selected.value=user.username;close();status.textContent='Selected @'+user.username});options.append(button)}status.textContent=users.length?users.length+' users found.':'No eligible users found.';options.hidden=!users.length;input.setAttribute('aria-expanded',String(users.length>0))}catch{if(current===request)status.textContent='Could not search users. Try again.'}},200)});document.addEventListener('click',event=>{if(!picker.contains(event.target))close()});document.querySelector('form').addEventListener('submit',event=>{if(!selected.value){event.preventDefault();status.textContent='Choose a user from the search results.';input.focus()}})})();
-</script></body></html>`))
+body{font-family:system-ui,sans-serif;max-width:650px;margin:4rem auto;padding:0 1.2rem;line-height:1.5}input,textarea,select,button{font:inherit;padding:.7rem;width:100%;box-sizing:border-box;margin:.35rem 0 1.1rem}button{background:#155fc1;color:white;border:0;border-radius:5px;cursor:pointer}aside{background:#fff4de;padding:1rem;border-left:4px solid #b97110}small{color:#555}
+</style></head><body><h1>Impersonate a user</h1><p>Signed in as <b>{{.Admin}}</b> (system admin).</p><aside><b>Privileged action:</b> all activity will run with the target user's permissions, be identified as their activity inside Mattermost, and be logged with your admin account in server logs. This is not a read-only preview. The temporary session lasts 15 minutes. On exit you must log in again as admin. Other tabs in this browser will also switch accounts.</aside><form method="POST" action="{{.Base}}/start"><input type="hidden" name="csrf" value="{{.CSRF}}"><label for="username">Target user</label><select id="username" name="username" required><option value="" selected disabled>Select a user</option>{{range .Targets}}<option value="{{.Username}}">@{{.Username}}{{if .FullName}} — {{.FullName}}{{end}}</option>{{end}}</select><label for="reason">Audit reason (8 to 240 characters)</label><textarea id="reason" name="reason" required minlength="8" maxlength="240" rows="3"></textarea><button type="submit">Start impersonation</button></form><small>System admins, bot users, disabled users, remote users, and your own account are excluded. Use a private browser window if you need your normal admin session open elsewhere.</small></body></html>`))
+
+type userOption struct {
+	Username string
+	FullName string
+}
 
 var sessionTmpl = template.Must(template.New("session").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Impersonation Active</title><style>body{font-family:system-ui,sans-serif;max-width:650px;margin:4rem auto;padding:0 1.2rem;line-height:1.5}article{padding:1.5rem;background:#fff2d4;border-left:5px solid #ba6e00}button{font:inherit;padding:.8rem 1.2rem;background:#aa261d;color:white;border:0;border-radius:5px;cursor:pointer}a{display:inline-block;margin:1rem 0}</style></head><body><article><h1>Impersonation is active</h1><p>You are acting as <b>@{{.Target}}</b> on behalf of system admin <b>@{{.Actor}}</b>.</p><p>Temporary session expiration: <b>{{.Expiry}}</b> (UTC).</p><p>Activity will appear to others as the target user. Follow your organization's approval policy.</p></article><p><a href="{{.Home}}">Open Mattermost as @{{.Target}}</a></p><form method="POST" action="{{.Base}}/stop"><input type="hidden" name="csrf" value="{{.CSRF}}"><button type="submit">Stop impersonation and sign out</button></form></body></html>`))
 
@@ -312,6 +310,12 @@ func (p *Plugin) adminPage(w http.ResponseWriter, r *http.Request, site *url.URL
 	if admin == nil {
 		return
 	}
+	targets, err := p.eligibleUsers(admin)
+	if err != nil {
+		p.API.LogError("Impersonation: unable to list target users", "error", err.Error())
+		http.Error(w, "Unable to load users", http.StatusInternalServerError)
+		return
+	}
 	token, err := newCSRF()
 	if err != nil {
 		http.Error(w, "Unable to prepare form", http.StatusInternalServerError)
@@ -320,46 +324,34 @@ func (p *Plugin) adminPage(w http.ResponseWriter, r *http.Request, site *url.URL
 	http.SetCookie(w, &http.Cookie{Name: formCSRFCookie, Value: token, Path: pluginPath(site),
 		MaxAge: int(formLifetime.Seconds()), Expires: time.Now().Add(formLifetime),
 		HttpOnly: true, Secure: site.Scheme == "https", SameSite: http.SameSiteStrictMode})
-	nonce, err := newCSRF()
-	if err != nil {
-		http.Error(w, "Unable to prepare form", http.StatusInternalServerError)
-		return
-	}
-	htmlPage(w, adminTmpl, struct{ Admin, Base, CSRF, Nonce string }{admin.Username, pluginPath(site), token, nonce}, nonce)
+	htmlPage(w, adminTmpl, struct {
+		Admin, Base, CSRF string
+		Targets           []userOption
+	}{admin.Username, pluginPath(site), token, targets}, "")
 }
 
-func (p *Plugin) searchUsers(w http.ResponseWriter, r *http.Request) {
-	admin := p.requireAdmin(w, r)
-	if admin == nil {
-		return
-	}
-	term := strings.TrimSpace(r.URL.Query().Get("q"))
-	if len(term) < 2 || len(term) > maxUsernameLength {
-		http.Error(w, "Search term must be between 2 and 64 characters", http.StatusBadRequest)
-		return
-	}
-	users, appErr := p.API.SearchUsers(&model.UserSearch{Term: term, Limit: 50})
-	if appErr != nil {
-		p.API.LogError("Impersonation: user search failed", "error", appErr.Error())
-		http.Error(w, "Unable to search users", http.StatusInternalServerError)
-		return
-	}
-	type userOption struct {
-		Username string `json:"username"`
-		FullName string `json:"full_name,omitempty"`
-	}
-	options := make([]userOption, 0, len(users))
-	for _, user := range users {
-		if user == nil || user.Id == admin.Id || user.DeleteAt != 0 || user.IsSystemAdmin() || user.IsBot || user.IsRemote() {
-			continue
+func (p *Plugin) eligibleUsers(admin *model.User) ([]userOption, error) {
+	const pageSize = 200
+	options := make([]userOption, 0)
+	for page := 0; ; page++ {
+		users, appErr := p.API.GetUsers(&model.UserGetOptions{Page: page, PerPage: pageSize})
+		if appErr != nil {
+			return nil, appErr
 		}
-		options = append(options, userOption{Username: user.Username, FullName: user.GetFullName()})
+		for _, user := range users {
+			if user == nil || user.Id == admin.Id || user.DeleteAt != 0 || user.IsSystemAdmin() || user.IsBot || user.IsRemote() {
+				continue
+			}
+			options = append(options, userOption{Username: user.Username, FullName: user.GetFullName()})
+		}
+		if len(users) < pageSize {
+			break
+		}
 	}
-	w.Header().Set("Cache-Control", "no-store, private")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err := json.NewEncoder(w).Encode(options); err != nil {
-		p.API.LogError("Impersonation: unable to encode user search results", "error", err.Error())
-	}
+	sort.Slice(options, func(i, j int) bool {
+		return strings.ToLower(options[i].Username) < strings.ToLower(options[j].Username)
+	})
+	return options, nil
 }
 
 func (p *Plugin) start(w http.ResponseWriter, r *http.Request, site *url.URL) {
