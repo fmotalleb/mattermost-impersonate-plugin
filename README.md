@@ -37,7 +37,7 @@ cd mattermost-impersonate-plugin
 
 This generates a Linux x86-64 + ARM64 Mattermost plugin install bundle at `dist/com.fmotalleb.impersonate-VERSION.tar.gz`. By default, `VERSION` comes from `plugin.json`; set `PLUGIN_VERSION=1.2.3` to override it. The manifest version inside the bundle uses the same value.
 
-The script runs `go mod tidy` and `go mod download`, builds the Go server executables and creates the Mattermost upload archive. The bundled `webapp/dist/main.js` is plain JavaScript and does not need an npm step. Pushing a `vX.Y.Z` Git tag runs the GitHub Actions build and uploads the matching bundle as a workflow artifact.
+The script runs `go mod tidy` and `go mod download`, builds the Go server executables and creates the Mattermost upload archive. The bundled `webapp/main.js` is plain JavaScript (copied to `webapp/dist/main.js` during packaging) and does not need an npm step. Pushing a `vX.Y.Z` Git tag runs the GitHub Actions build and uploads the matching bundle as a workflow artifact.
 
 ## Installation
 
@@ -80,7 +80,7 @@ go.mod                          Go dependency declaration
 server/main.go                  Plugin entry point
 server/plugin.go                Authentication/session logic, routes, audit logging
 server/plugin_test.go           HTTP-handler tests
-webapp/dist/main.js             Web/desktop banner and admin menu item
+webapp/main.js                  Web/desktop banner and admin menu item source
 scripts/build.sh                Build and archive script
 ```
 

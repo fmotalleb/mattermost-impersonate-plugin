@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-mkdir -p server/dist dist
+mkdir -p server/dist dist webapp/dist
 VERSION="${PLUGIN_VERSION:-$(sed -nE 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' plugin.json | head -n 1)}"
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Invalid plugin version: $VERSION (expected X.Y.Z)" >&2
@@ -16,6 +16,7 @@ for arch in amd64 arm64; do
     CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags='-s -w' \
         -o "server/dist/plugin-linux-${arch}" ./server
 done
+cp webapp/main.js webapp/dist/main.js
 STAGING_DIR="$(mktemp -d)"
 trap 'rm -rf "$STAGING_DIR"' EXIT
 sed -E "s/^([[:space:]]*\"version\"[[:space:]]*:[[:space:]]*\")[^\"]+(\".*)$/\1${VERSION}\2/" plugin.json > "$STAGING_DIR/plugin.json"
