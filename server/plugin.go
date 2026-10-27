@@ -90,9 +90,11 @@ func (p *Plugin) ServeHTTP(_ *plugin.Context, w http.ResponseWriter, r *http.Req
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 
-	// The Mattermost server, not the client, is responsible for this authenticated header.
-	// Never trust a user_id supplied in a form, URL, or JSON body.
-	if r.Header.Get("Mattermost-User-Id") == "" || r.Header.Get("Authorization") != "" {
+	// Mattermost injects this identity header only for authenticated requests.
+	// Never trust a user_id supplied in a form, URL, or JSON body. Some valid
+	// browser sessions also carry an Authorization header, so its presence alone
+	// does not make the server-provided identity untrusted.
+	if r.Header.Get("Mattermost-User-Id") == "" {
 		http.Error(w, "A Mattermost browser login is required", http.StatusUnauthorized)
 		return
 	}
