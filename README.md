@@ -37,7 +37,7 @@ cd mattermost-impersonate-plugin
 
 This generates a Linux x86-64 + ARM64 Mattermost plugin install bundle at:
 
-`dist/com.example.impersonate-0.1.0.tar.gz`
+`dist/com.fmotalleb.impersonate-0.1.0.tar.gz`
 
 The script runs `go mod tidy` and `go mod download`, builds the Go server executables and creates the Mattermost upload archive. The bundled `webapp/dist/main.js` is plain JavaScript and does not need an npm step.
 
@@ -45,13 +45,13 @@ The script runs `go mod tidy` and `go mod download`, builds the Go server execut
 
 1. Back up your Mattermost configuration and test first on staging.
 2. In Mattermost System Console, enable plugins and plugin uploads (or configure `PluginSettings.Enable` and `PluginSettings.EnableUploads` appropriately).
-3. Upload `dist/com.example.impersonate-0.1.0.tar.gz` under **System Console → Plugins → Plugin Management** and enable the plugin.
+3. Upload `dist/com.fmotalleb.impersonate-0.1.0.tar.gz` under **System Console → Plugins → Plugin Management** and enable the plugin.
 4. Sign in with a system admin account using the web browser.
 5. Choose **Impersonate user** from the main menu, or open:
 
-   `https://YOUR-MATTERMOST-HOST/plugins/com.example.impersonate/`
+   `https://YOUR-MATTERMOST-HOST/plugins/com.fmotalleb.impersonate/`
 
-   If Mattermost is hosted under a subpath, prepend it, e.g. `/mattermost/plugins/com.example.impersonate/`.
+   If Mattermost is hosted under a subpath, prepend it, e.g. `/mattermost/plugins/com.fmotalleb.impersonate/`.
 6. Enter a non-admin target username and an audit reason; select **Start impersonation**.
 7. In the next page, select **Open Mattermost**. A banner indicates the impersonated identity.
 8. Select **Stop impersonation** from the banner, then **Stop impersonation and sign out**. Sign in again as admin normally.

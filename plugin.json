@@ -1,5 +1,5 @@
 {
-  "id": "com.example.impersonate",
+  "id": "com.fmotalleb.impersonate",
   "name": "Admin Impersonation",
   "description": "Audited, temporary user impersonation for Mattermost system administrators.",
   "version": "0.1.0",

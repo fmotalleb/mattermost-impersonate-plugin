@@ -11,6 +11,6 @@ for arch in amd64 arm64; do
     CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags='-s -w' \
         -o "server/dist/plugin-linux-${arch}" ./server
 done
-tar -czf dist/com.example.impersonate-0.1.0.tar.gz plugin.json \
+tar -czf dist/com.fmotalleb.impersonate-0.1.0.tar.gz plugin.json \
     server/dist/plugin-linux-amd64 server/dist/plugin-linux-arm64 webapp/dist/main.js
-echo "Bundle ready: dist/com.example.impersonate-0.1.0.tar.gz"
+echo "Bundle ready: dist/com.fmotalleb.impersonate-0.1.0.tar.gz"

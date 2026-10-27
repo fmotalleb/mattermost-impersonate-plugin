@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	pluginID          = "com.example.impersonate"
+	pluginID          = "com.fmotalleb.impersonate"
 	formCSRFCookie    = "MMIMPERSONATECSRF"
 	sessionLifetime   = 15 * time.Minute
 	formLifetime      = 5 * time.Minute
