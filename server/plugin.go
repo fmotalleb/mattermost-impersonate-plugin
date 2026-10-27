@@ -224,18 +224,6 @@ func newCSRF() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
-func sameOrigin(r *http.Request, site *url.URL) bool {
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		return false
-	} // Browser form POSTs include Origin; fail closed.
-	u, err := url.Parse(origin)
-	if err != nil || u.Scheme != site.Scheme || !strings.EqualFold(u.Host, site.Host) || u.User != nil {
-		return false
-	}
-	return u.Path == "" || u.Path == "/"
-}
-
 func verifyFormCSRF(r *http.Request, name, supplied string) bool {
 	cookie, err := r.Cookie(name)
 	return err == nil && len(supplied) > 0 &&
@@ -363,8 +351,8 @@ func (p *Plugin) start(w http.ResponseWriter, r *http.Request, site *url.URL) {
 	if admin == nil {
 		return
 	}
-	if !sameOrigin(r, site) || !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
-		http.Error(w, "Invalid request origin or content type", http.StatusForbidden)
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+		http.Error(w, "Invalid content type", http.StatusForbidden)
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 2048)
@@ -476,8 +464,8 @@ func (p *Plugin) stop(w http.ResponseWriter, r *http.Request, site *url.URL) {
 		http.Error(w, "No active impersonation session", http.StatusForbidden)
 		return
 	}
-	if !sameOrigin(r, site) || !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
-		http.Error(w, "Invalid request origin or content type", http.StatusForbidden)
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+		http.Error(w, "Invalid content type", http.StatusForbidden)
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 1024)

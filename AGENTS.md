@@ -22,7 +22,7 @@ Add or update handler tests for changes to routes, authorization, CSRF, session 
 
 ## Security and Configuration
 
-Treat session tokens, impersonation records, and audit reasons as sensitive. Never expose session tokens in logs, URLs, client-side code, or responses. Preserve admin-only authorization, target-account restrictions, CSRF and same-origin checks, short session expiry, and explicit session revocation. Use HTTPS outside loopback development and verify `SiteURL` and any proxy or cookie configuration in staging.
+Treat session tokens, impersonation records, and audit reasons as sensitive. Never expose session tokens in logs, URLs, client-side code, or responses. Preserve admin-only authorization, target-account restrictions, Mattermost and plugin CSRF checks, short session expiry, and explicit session revocation. Use HTTPS outside loopback development and verify `SiteURL` and any proxy or cookie configuration in staging.
 
 ## Commits and Pull Requests
 

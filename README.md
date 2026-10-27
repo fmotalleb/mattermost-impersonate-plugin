@@ -15,7 +15,7 @@ Allows a Mattermost **system administrator** to temporarily act as a *non-admin*
 - Web/desktop banner identifies the admin and the target user and links to a session exit page. The banner is not implemented for native mobile clients.
 - Explicit **Stop impersonation and sign out** action revokes the target session and clears Mattermost auth cookies.
 - Start/stop events are written to the Mattermost server logs with admin, target, session ID and reason.
-- CSRF checks, same-origin POST enforcement, no-cache response headers and session cookie security settings.
+- Mattermost and plugin CSRF checks, no-cache response headers and session cookie security settings.
 - Best-effort revocation of active sessions on plugin deactivation, plus 15-minute server session expiry.
 
 ## Dependencies
